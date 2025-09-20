@@ -1,37 +1,37 @@
-# читаем локальные логи (они должны реально лежать в ../logs на хосте)
+# Читаем новые строки из файлов в /var/log
 [sources.app_logs]
 type = "file"
 include = ["/var/log/*.log"]
-ignore_older_secs = 600
 read_from = "beginning"
 
-# добавим @timestamp и пару меток
+# Добавим поля и нормализуем timestamp
 [transforms.enrich]
-type = "remap"
+type   = "remap"
 inputs = ["app_logs"]
 source = '''
-  .@timestamp = to_timestamp!(now())        # для дашборда по времени
+  .timestamp = format_timestamp!(now(), format: "%+")  # RFC3339
   .source = "file"
   .ingest = "vector"
 '''
 
-# отправка в OpenSearch через elasticsearch sink
+# Пишем в OpenSearch через elasticsearch sink (совместим)
 [sinks.opensearch]
-type = "elasticsearch"
-inputs = ["enrich"]
+type      = "elasticsearch"
+inputs    = ["enrich"]
 endpoints = ["https://opensearch-node1:9200"]
+auth.strategy = "basic"
+auth.user     = "admin"
+auth.password = "GregoTeam#69!8--"
+tls.verify_certificate = false
+api_version = "v8"          # чтобы Vector не гадал
+
+# В 0.49 индекс задаётся в подсекции bulk
+mode = "bulk"
+[sinks.opensearch.bulk]
 index = "app-logs-%Y.%m.%d"
 
-auth.strategy = "basic"
-auth.user = "admin"
-auth.password = "GregoTeam#69!8--"
-
-tls.verify_certificate = false
-request.timeout_secs = 30
-request.retry_max_duration_secs = 300
-
-# для отладки — в консоль контейнера
+# Для отладки — видно те же события в логе контейнера Vector
 [sinks.console]
 type = "console"
-inputs = ["app_logs"]
+inputs = ["enrich"]
 encoding.codec = "json"
