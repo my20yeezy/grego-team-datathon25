@@ -4,12 +4,10 @@ services:
     image: opensearchproject/opensearch:latest
     container_name: opensearch-node1
     environment:
-      - discovery.type=single-node
-      - bootstrap.memory_lock=true
-      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=GregoTeam#69!8--
-      - plugins.security.disabled=true
-      - plugins.security.ssl.http.enabled=false
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: "GregoTeam#69!8--"
     volumes:
       - opensearch-data1:/usr/share/opensearch/data
     ports:
@@ -22,9 +20,10 @@ services:
     ports:
       - "5601:5601"
     environment:
-      - OPENSEARCH_HOSTS=http://opensearch-node1:9200
-      - OPENSEARCH_USERNAME=admin
-      - OPENSEARCH_PASSWORD=GregoTeam#69!8--
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200"]'
+      OPENSEARCH_USERNAME: "admin"
+      OPENSEARCH_PASSWORD: "GregoTeam#69!8--"
+      OPENSEARCH_SSL_VERIFICATIONMODE: "none"
     depends_on:
       - opensearch-node1
 

@@ -1,19 +1,36 @@
+# читаем локальные логи (они должны реально лежать в ../logs на хосте)
 [sources.app_logs]
 type = "file"
 include = ["/var/log/*.log"]
 ignore_older_secs = 600
 read_from = "beginning"
 
-[sinks.opensearch]
-type = "opensearch"
+# добавим @timestamp и пару меток
+[transforms.enrich]
+type = "remap"
 inputs = ["app_logs"]
-endpoint = "http://opensearch-node1:9200"
-index = "app-logs-%Y-%m-%d"
+source = '''
+  .@timestamp = to_timestamp!(now())        # для дашборда по времени
+  .source = "file"
+  .ingest = "vector"
+'''
+
+# отправка в OpenSearch через elasticsearch sink
+[sinks.opensearch]
+type = "elasticsearch"
+inputs = ["enrich"]
+endpoints = ["https://opensearch-node1:9200"]
+index = "app-logs-%Y.%m.%d"
+
 auth.strategy = "basic"
 auth.user = "admin"
-auth.password = "${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+auth.password = "GregoTeam#69!8--"
 
-# Для отладки - дублируем в консоль
+tls.verify_certificate = false
+request.timeout_secs = 30
+request.retry_max_duration_secs = 300
+
+# для отладки — в консоль контейнера
 [sinks.console]
 type = "console"
 inputs = ["app_logs"]

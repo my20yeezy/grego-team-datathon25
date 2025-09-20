@@ -6,9 +6,6 @@ opensearch/volumes/
 logs/*.log
 !logs/.gitkeep
 
-# Environment variables (файл в opensearch/.env)
-opensearch/.env
-
 # Системные файлы
 .DS_Store
 Thumbs.db
