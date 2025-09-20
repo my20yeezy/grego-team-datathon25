@@ -1,61 +1,42 @@
-version: "3.8"
-
+version: '3'
 services:
   opensearch-node1:
     image: opensearchproject/opensearch:latest
     container_name: opensearch-node1
     environment:
-      - cluster.name=opensearch-cluster
-      - node.name=opensearch-node1
-      - discovery.seed_hosts=opensearch-node1,opensearch-node2
-      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
+      - discovery.type=single-node
       - bootstrap.memory_lock=true
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
-    ulimits:
-      memlock: { soft: -1, hard: -1 }
-      nofile:  { soft: 65536, hard: 65536 }
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=GregoTeam#69!8--
+      - plugins.security.disabled=true
+      - plugins.security.ssl.http.enabled=false
     volumes:
       - opensearch-data1:/usr/share/opensearch/data
     ports:
       - "9200:9200"
       - "9600:9600"
-    networks: [opensearch-net]
-
-  opensearch-node2:
-    image: opensearchproject/opensearch:latest
-    container_name: opensearch-node2
-    environment:
-      - cluster.name=opensearch-cluster
-      - node.name=opensearch-node2
-      - discovery.seed_hosts=opensearch-node1,opensearch-node2
-      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2
-      - bootstrap.memory_lock=true
-      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
-    ulimits:
-      memlock: { soft: -1, hard: -1 }
-      nofile:  { soft: 65536, hard: 65536 }
-    volumes:
-      - opensearch-data2:/usr/share/opensearch/data
-    networks: [opensearch-net]
 
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:latest
     container_name: opensearch-dashboards
-    depends_on: [opensearch-node1, opensearch-node2]
-    environment:
-      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]'
-      OPENSEARCH_USERNAME: "admin"
-      OPENSEARCH_PASSWORD: "${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
-      OPENSEARCH_SSL_VERIFICATIONMODE: "none"
     ports:
       - "5601:5601"
-    networks: [opensearch-net]
+    environment:
+      - OPENSEARCH_HOSTS=http://opensearch-node1:9200
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=GregoTeam#69!8--
+    depends_on:
+      - opensearch-node1
+
+  vector:
+    image: timberio/vector:0.49.0-alpine
+    container_name: vector
+    restart: unless-stopped
+    volumes:
+      - ../vector/config/vector.toml:/etc/vector/vector.toml:ro
+      - ../logs:/var/log:ro
+    depends_on:
+      - opensearch-node1
 
 volumes:
   opensearch-data1:
-  opensearch-data2:
-
-networks:
-  opensearch-net:

@@ -1,0 +1,20 @@
+[sources.app_logs]
+type = "file"
+include = ["/var/log/*.log"]
+ignore_older_secs = 600
+read_from = "beginning"
+
+[sinks.opensearch]
+type = "opensearch"
+inputs = ["app_logs"]
+endpoint = "http://opensearch-node1:9200"
+index = "app-logs-%Y-%m-%d"
+auth.strategy = "basic"
+auth.user = "admin"
+auth.password = "${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+
+# Для отладки - дублируем в консоль
+[sinks.console]
+type = "console"
+inputs = ["app_logs"]
+encoding.codec = "json"

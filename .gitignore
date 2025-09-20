@@ -1,0 +1,17 @@
+# Данные Docker (они создаются в opensearch/data/)
+opensearch/data/
+opensearch/volumes/
+
+# Логи (папка logs в корне)
+logs/*.log
+!logs/.gitkeep
+
+# Environment variables (файл в opensearch/.env)
+opensearch/.env
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# Бинарные файлы Vector (если решите не использовать Docker)
+vector/bin/
