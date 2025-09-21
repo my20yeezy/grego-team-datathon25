@@ -1,37 +1,70 @@
-# Читаем новые строки из файлов в /var/log
-[sources.app_logs]
+# 1. HTTP источник для приема логов
+[sources.http_logs]
+type = "http"
+address = "0.0.0.0:8686"
+encoding = "json"
+
+# 2. Обработка HTTP логов
+[transforms.http_enrich]
+type = "remap"
+inputs = ["http_logs"]
+source = '''
+  .source = "http_api"
+  .ingest_time = now()
+  .received_from = .host
+  if exists(.timestamp) {
+    .timestamp = parse_timestamp!(.timestamp, format: "%+")
+  } else {
+    .timestamp = now()
+  }
+  if !exists(.level) { .level = "INFO" }
+  if !exists(.source) { .source = "unknown" }
+'''
+
+# 3. Файловый источник
+[sources.file_logs]
 type = "file"
 include = ["/var/log/*.log"]
 read_from = "beginning"
+ignore_older_secs = 86400
 
-# Добавим поля и нормализуем timestamp
-[transforms.enrich]
-type   = "remap"
-inputs = ["app_logs"]
+[transforms.file_enrich]
+type = "remap"
+inputs = ["file_logs"]
 source = '''
-  .timestamp = format_timestamp!(now(), format: "%+")  # RFC3339
   .source = "file"
-  .ingest = "vector"
+  .ingest_time = now()
+  .timestamp = format_timestamp!(now(), format: "%+")
 '''
 
-# Пишем в OpenSearch через elasticsearch sink (совместим)
+# 4. Объединяем все источники (ИСПРАВЛЕНО)
+[transforms.merge_logs]
+type = "remap"  # ← ЗДЕСЬ ИСПРАВЛЕНИЕ!
+inputs = ["http_enrich", "file_enrich"]
+source = '''
+  # Просто передаем данные дальше
+  .
+'''
+
+# 5. Отправляем в OpenSearch
 [sinks.opensearch]
-type      = "elasticsearch"
-inputs    = ["enrich"]
+type = "elasticsearch"
+inputs = ["merge_logs"]
 endpoints = ["https://opensearch-node1:9200"]
 auth.strategy = "basic"
-auth.user     = "admin"
+auth.user = "admin"
 auth.password = "GregoTeam#69!8--"
 tls.verify_certificate = false
-api_version = "v8"          # чтобы Vector не гадал
 
-# В 0.49 индекс задаётся в подсекции bulk
+suppress_type_name = true
+
 mode = "bulk"
 [sinks.opensearch.bulk]
 index = "app-logs-%Y.%m.%d"
+action = "create"
 
-# Для отладки — видно те же события в логе контейнера Vector
+# 6. Для отладки
 [sinks.console]
 type = "console"
-inputs = ["enrich"]
+inputs = ["merge_logs"]
 encoding.codec = "json"
