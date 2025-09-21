@@ -12,3 +12,15 @@ Thumbs.db
 
 # Бинарные файлы Vector (если решите не использовать Docker)
 vector/bin/
+
+.venv/
+*/.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+.cache/
+logs/
+data/
+models/
+huggingface/
