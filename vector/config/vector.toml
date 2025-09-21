@@ -50,7 +50,7 @@ source = '''
 [sinks.opensearch]
 type = "elasticsearch"
 inputs = ["merge_logs"]
-endpoints = ["https://opensearch-node1:9200"]
+endpoints = ["https://opensearch-node1:9201"]
 auth.strategy = "basic"
 auth.user = "admin"
 auth.password = "GregoTeam#69!8--"

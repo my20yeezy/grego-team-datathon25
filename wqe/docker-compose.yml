@@ -1,0 +1,62 @@
+version: '3.8'
+services:
+  # API сервис
+  log-api:
+    build: ./api  # ← Просто указываем папку
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - ELASTICSEARCH_HOST=http://elasticsearch:9200
+      - TZ=UTC
+    depends_on:
+      - redis
+      - elasticsearch
+    networks:
+      - log-network
+
+  # Краткосрочное хранилище
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - log-network
+
+  # Долгосрочное хранилище
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - log-network
+
+  # LLM Agent сервис
+  llm-agent:
+    build: ./llm_agent  # ← Просто указываем папку
+    environment:
+      - API_URL=http://log-api:8000
+      - REDIS_HOST=redis
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - log-api
+      - redis
+    networks:
+      - log-network
+
+volumes:
+  redis_data:
+  es_data:
+
+networks:
+  log-network:
+    driver: bridge

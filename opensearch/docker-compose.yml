@@ -9,7 +9,7 @@ services:
       OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
       OPENSEARCH_INITIAL_ADMIN_PASSWORD: "GregoTeam#69!8--"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sk -u admin:'GregoTeam#69!8--' https://localhost:9200 >/dev/null"]
+      test: ["CMD-SHELL", "curl -sk -u admin:'GregoTeam#69!8--' https://localhost:9201 >/dev/null"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -17,7 +17,7 @@ services:
     volumes:
       - opensearch-data1:/usr/share/opensearch/data
     ports:
-      - "9200:9200"
+      - "9201:9201"
       - "9600:9600"
 
   opensearch-dashboards:
@@ -26,7 +26,7 @@ services:
     ports:
       - "5601:5601"
     environment:
-      OPENSEARCH_HOSTS: '["https://opensearch-node1:9200"]'
+      OPENSEARCH_HOSTS: '["https://opensearch-node1:9201"]'
       OPENSEARCH_USERNAME: "admin"
       OPENSEARCH_PASSWORD: "GregoTeam#69!8--"
       OPENSEARCH_SSL_VERIFICATIONMODE: "none"
